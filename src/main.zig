@@ -1,14 +1,27 @@
 const std = @import("std");
 const rl = @import("raylib");
 const Framebuffer = @import("framebuffer.zig").Framebuffer;
+const Vec3 = @import("vec3.zig").Vec3;
 const load_obj = @import("obj.zig").load_obj;
 const fit_to_screen = @import("view.zig").fit_to_screen;
+const draw_line = @import("line.zig").draw_line;
 
 const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
 
 // El .obj se mete dentro del programa al compilar (src/mono.obj)
 const mono_obj = @embedFile("mono.obj");
+
+/// Dibuja la arista entre dos vértices ya en coordenadas de pantalla.
+fn draw_edge(fb: *Framebuffer, p: Vec3, q: Vec3) !void {
+    try draw_line(
+        fb,
+        @intFromFloat(@round(p.x)),
+        @intFromFloat(@round(p.y)),
+        @intFromFloat(@round(q.x)),
+        @intFromFloat(@round(q.y)),
+    );
+}
 
 pub fn main() !void {
     const gpa = std.heap.page_allocator;
@@ -24,15 +37,18 @@ pub fn main() !void {
     var fb = Framebuffer.init(WIDTH, HEIGHT, .black, .white);
     defer fb.deinit();
 
-    // Prueba: un puntito de 2x2 píxeles por cada vértice
-    for (screen) |p| {
-        const x: i32 = @intFromFloat(p.x);
-        const y: i32 = @intFromFloat(p.y);
-        try fb.set_pixel(x, y);
-        try fb.set_pixel(x + 1, y);
-        try fb.set_pixel(x, y + 1);
-        try fb.set_pixel(x + 1, y + 1);
+    // Wireframe: las 3 aristas de cada cara
+    for (model.faces) |f| {
+        const a = screen[f.a];
+        const b = screen[f.b];
+        const c = screen[f.c];
+        try draw_edge(&fb, a, b);
+        try draw_edge(&fb, b, c);
+        try draw_edge(&fb, c, a);
     }
+
+    // Foto del resultado para la entrega
+    try fb.render_to_file("wireframe.png");
 
     while (!rl.windowShouldClose()) {
         try fb.swap_buffers();
