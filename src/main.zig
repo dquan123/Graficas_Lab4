@@ -1,11 +1,23 @@
+const std = @import("std");
 const rl = @import("raylib");
 const Framebuffer = @import("framebuffer.zig").Framebuffer;
-const draw_line = @import("line.zig").draw_line;
+const load_obj = @import("obj.zig").load_obj;
 
 const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
 
+// El .obj se mete dentro del programa al compilar (src/mono.obj)
+const mono_obj = @embedFile("mono.obj");
+
 pub fn main() !void {
+    const model = try load_obj(std.heap.page_allocator, mono_obj);
+
+    const v0 = model.vertices[0];
+    const f0 = model.faces[0];
+    std.debug.print("vertices: {d}  caras: {d}\n", .{ model.vertices.len, model.faces.len });
+    std.debug.print("v0 = ({d}, {d}, {d})\n", .{ v0.x, v0.y, v0.z });
+    std.debug.print("f0 = {d} {d} {d}\n", .{ f0.a, f0.b, f0.c });
+
     rl.setTraceLogLevel(.warning);
     rl.initWindow(WIDTH, HEIGHT, "Lab 4: Wireframe");
     defer rl.closeWindow();
@@ -13,25 +25,6 @@ pub fn main() !void {
 
     var fb = Framebuffer.init(WIDTH, HEIGHT, .black, .white);
     defer fb.deinit();
-
-    // Puntos de destino; todas las líneas salen del centro (400, 300)
-    const destinos = [_][2]i32{
-        .{ 700, 300 }, // horizontal derecha
-        .{ 100, 300 }, // horizontal izquierda
-        .{ 400, 50 }, // vertical arriba
-        .{ 400, 550 }, // vertical abajo
-        .{ 600, 100 }, // diagonal
-        .{ 200, 100 },
-        .{ 200, 500 },
-        .{ 600, 500 },
-        .{ 750, 350 }, // poco inclinada
-        .{ 430, 40 }, // muy empinada
-        .{ 1000, 900 }, // se sale de la pantalla
-    };
-
-    for (destinos) |d| {
-        try draw_line(&fb, 400, 300, d[0], d[1]);
-    }
 
     while (!rl.windowShouldClose()) {
         try fb.swap_buffers();
