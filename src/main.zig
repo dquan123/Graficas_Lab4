@@ -1,5 +1,6 @@
 const rl = @import("raylib");
 const Framebuffer = @import("framebuffer.zig").Framebuffer;
+const draw_line = @import("line.zig").draw_line;
 
 const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
@@ -13,13 +14,23 @@ pub fn main() !void {
     var fb = Framebuffer.init(WIDTH, HEIGHT, .black, .white);
     defer fb.deinit();
 
-    // Prueba: cuadrado blanco de 100x100 en el centro
-    var y: i32 = 250;
-    while (y < 350) : (y += 1) {
-        var x: i32 = 350;
-        while (x < 450) : (x += 1) {
-            try fb.set_pixel(x, y);
-        }
+    // Puntos de destino; todas las líneas salen del centro (400, 300)
+    const destinos = [_][2]i32{
+        .{ 700, 300 }, // horizontal derecha
+        .{ 100, 300 }, // horizontal izquierda
+        .{ 400, 50 }, // vertical arriba
+        .{ 400, 550 }, // vertical abajo
+        .{ 600, 100 }, // diagonal
+        .{ 200, 100 },
+        .{ 200, 500 },
+        .{ 600, 500 },
+        .{ 750, 350 }, // poco inclinada
+        .{ 430, 40 }, // muy empinada
+        .{ 1000, 900 }, // se sale de la pantalla
+    };
+
+    for (destinos) |d| {
+        try draw_line(&fb, 400, 300, d[0], d[1]);
     }
 
     while (!rl.windowShouldClose()) {
