@@ -2,6 +2,7 @@ const std = @import("std");
 const rl = @import("raylib");
 const Framebuffer = @import("framebuffer.zig").Framebuffer;
 const load_obj = @import("obj.zig").load_obj;
+const fit_to_screen = @import("view.zig").fit_to_screen;
 
 const WIDTH: i32 = 800;
 const HEIGHT: i32 = 600;
@@ -10,13 +11,10 @@ const HEIGHT: i32 = 600;
 const mono_obj = @embedFile("mono.obj");
 
 pub fn main() !void {
-    const model = try load_obj(std.heap.page_allocator, mono_obj);
+    const gpa = std.heap.page_allocator;
 
-    const v0 = model.vertices[0];
-    const f0 = model.faces[0];
-    std.debug.print("vertices: {d}  caras: {d}\n", .{ model.vertices.len, model.faces.len });
-    std.debug.print("v0 = ({d}, {d}, {d})\n", .{ v0.x, v0.y, v0.z });
-    std.debug.print("f0 = {d} {d} {d}\n", .{ f0.a, f0.b, f0.c });
+    const model = try load_obj(gpa, mono_obj);
+    const screen = try fit_to_screen(gpa, model.vertices, WIDTH, HEIGHT);
 
     rl.setTraceLogLevel(.warning);
     rl.initWindow(WIDTH, HEIGHT, "Lab 4: Wireframe");
@@ -25,6 +23,16 @@ pub fn main() !void {
 
     var fb = Framebuffer.init(WIDTH, HEIGHT, .black, .white);
     defer fb.deinit();
+
+    // Prueba: un puntito de 2x2 píxeles por cada vértice
+    for (screen) |p| {
+        const x: i32 = @intFromFloat(p.x);
+        const y: i32 = @intFromFloat(p.y);
+        try fb.set_pixel(x, y);
+        try fb.set_pixel(x + 1, y);
+        try fb.set_pixel(x, y + 1);
+        try fb.set_pixel(x + 1, y + 1);
+    }
 
     while (!rl.windowShouldClose()) {
         try fb.swap_buffers();
